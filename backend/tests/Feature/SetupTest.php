@@ -15,6 +15,10 @@ test('database connection works', function () {
 });
 
 test('redis connection works', function () {
+    if (!extension_loaded('redis')) {
+        $this->markTestSkipped('PHP Redis extension not installed');
+    }
+
     Redis::set('test_key', 'test_value');
     $value = Redis::get('test_key');
 
