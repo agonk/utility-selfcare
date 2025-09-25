@@ -1,0 +1,71 @@
+# Documentation and reference files (local development only)
+/ARCHITECTURE_DECISIONS.md
+/CLAUDE.md
+/FEATURE_TASKS.md
+/FRONTEND_INTEGRATION.md
+/PROJECT_DOCUMENTATION.md
+
+# Figma design reference (not for production)
+/frontend_design_figma/
+
+# Laravel
+/backend/vendor/
+/backend/node_modules/
+/backend/public/hot
+/backend/public/storage
+/backend/storage/*.key
+/backend/.env
+/backend/.env.backup
+/backend/.phpunit.result.cache
+/backend/Homestead.json
+/backend/Homestead.yaml
+/backend/npm-debug.log
+/backend/yarn-error.log
+/backend/.idea
+/backend/.vscode
+/backend/coverage/
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/build/
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.production.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/coverage/
+/frontend/.vscode
+/frontend/.idea
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+/.idea
+/.vscode
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# Docker
+/docker/data/
+*.log
+
+# Testing
+/cypress/videos/
+/cypress/screenshots/
+/e2e/test-results/
+/playwright-report/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
