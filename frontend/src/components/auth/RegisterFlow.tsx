@@ -69,11 +69,19 @@ export const RegisterFlow: React.FC = () => {
     }
 
     try {
-      await register(data)
+      await register({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        passwordConfirmation: data.passwordConfirm,
+        phone: data.phone,
+        locale: data.locale
+      })
       toast.success('Account created successfully!')
       reset()
       navigate('/dashboard')
     } catch (error) {
+      console.error('Registration error:', error)
       toast.error('Registration failed. Please try again.')
     }
   }
@@ -141,7 +149,7 @@ export const RegisterFlow: React.FC = () => {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+355 69 123 4567"
+                    placeholder="+383 4x xxx xxx"
                     value={data.phone || ''}
                     onChange={(e) => updateData({ phone: e.target.value })}
                   />
