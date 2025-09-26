@@ -30,9 +30,11 @@ class Verification extends Model
 
     const TYPE_OTP = 'otp';
     const TYPE_INVOICE = 'invoice';
+    const TYPE_EMAIL = 'email';
 
     const MAX_ATTEMPTS = 3;
     const OTP_EXPIRY_MINUTES = 10;
+    const EMAIL_EXPIRY_HOURS = 24;
 
     public function user(): BelongsTo
     {
@@ -47,6 +49,21 @@ class Verification extends Model
             'type' => self::TYPE_OTP,
             'token' => static::generateOTP(),
             'expires_at' => now()->addMinutes(self::OTP_EXPIRY_MINUTES),
+        ]);
+    }
+
+    public static function createEmailVerification(int $userId): self
+    {
+        static::where('user_id', $userId)
+            ->where('type', self::TYPE_EMAIL)
+            ->where('verified_at', null)
+            ->delete();
+
+        return static::create([
+            'user_id' => $userId,
+            'type' => self::TYPE_EMAIL,
+            'token' => Str::random(64),
+            'expires_at' => now()->addHours(self::EMAIL_EXPIRY_HOURS),
         ]);
     }
 

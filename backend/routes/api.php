@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/email/verify', [AuthController::class, 'verifyEmail']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -14,6 +15,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail']);
 
     // Heatmeter and Verification routes
     Route::prefix('heatmeters')->group(function () {

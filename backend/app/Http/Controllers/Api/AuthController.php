@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\EmailVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,13 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    protected EmailVerificationService $emailVerificationService;
+
+    public function __construct(EmailVerificationService $emailVerificationService)
+    {
+        $this->emailVerificationService = $emailVerificationService;
+    }
+
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -30,12 +38,14 @@ class AuthController extends Controller
             'language' => $validated['language'] ?? 'sq',
         ]);
 
+        $this->emailVerificationService->sendVerificationEmail($user);
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token,
-            'message' => 'Registration successful',
+            'message' => 'Registration successful. Please check your email to verify your account.',
         ], 201);
     }
 
@@ -112,6 +122,49 @@ class AuthController extends Controller
             'user' => $user,
             'token' => $token,
             'message' => 'Token refreshed successfully',
+        ]);
+    }
+
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => 'required|string|size:64',
+        ]);
+
+        $user = $this->emailVerificationService->verifyEmail($validated['token']);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid or expired verification token.',
+            ], 400);
+        }
+
+        return response()->json([
+            'message' => 'Email verified successfully.',
+            'user' => $user,
+        ]);
+    }
+
+    public function resendVerificationEmail(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->email_verified_at) {
+            return response()->json([
+                'message' => 'Email already verified.',
+            ], 400);
+        }
+
+        $sent = $this->emailVerificationService->resendVerificationEmail($user);
+
+        if (!$sent) {
+            return response()->json([
+                'message' => 'Please wait before requesting another verification email.',
+            ], 429);
+        }
+
+        return response()->json([
+            'message' => 'Verification email sent.',
         ]);
     }
 }
