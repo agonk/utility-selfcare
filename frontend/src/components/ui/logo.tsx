@@ -1,6 +1,6 @@
 import React from 'react'
-import lightLogo from 'figma:asset/e3cfcd8de72f32f3299c8db88994143ee5e74484.png'
-import iconLogo from 'figma:asset/fb35e230f7ff25de5192b7ab71ba012bd622b6eb.png'
+import lightLogo from '../../assets/termokos-logo.png'
+import iconLogo from '../../assets/termokos-icon.png'
 
 interface LogoProps {
   className?: string

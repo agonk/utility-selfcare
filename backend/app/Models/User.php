@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -21,6 +22,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
         'password',
         'phone',
         'heatmeter_id',
@@ -87,5 +89,25 @@ class User extends Authenticatable
         $this->last_login_at = now();
         $this->last_login_ip = request()->ip();
         $this->save();
+    }
+
+    public function heatmeters(): HasMany
+    {
+        return $this->hasMany(UserHeatmeter::class);
+    }
+
+    public function verifications(): HasMany
+    {
+        return $this->hasMany(Verification::class);
+    }
+
+    public function verifiedHeatmeters(): HasMany
+    {
+        return $this->heatmeters()->verified();
+    }
+
+    public function primaryHeatmeter()
+    {
+        return $this->heatmeters()->primary()->first();
     }
 }
