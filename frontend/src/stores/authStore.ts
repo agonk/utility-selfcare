@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { authApi, User as ApiUser, apiService } from '../services/api'
 
 export interface User {
   id: string
@@ -27,12 +28,12 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
-  
+
   // Impersonation state
   originalUser: User | null
   impersonatedUser: User | null
   isImpersonating: boolean
-  
+
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>
   logout: () => void
@@ -42,98 +43,21 @@ interface AuthState {
   setUser: (user: User) => void
   startImpersonation: (targetUser: User) => void
   stopImpersonation: () => void
+  checkAuth: () => Promise<void>
 }
 
-// Mock API functions (in real app these would call your Laravel backend)
-const mockLogin = async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Mock different users based on credentials
-  if (credentials.identifier === 'admin@example.com') {
-    return {
-      user: {
-        id: 'admin-1',
-        email: 'admin@example.com',
-        fullName: 'System Administrator',
-        phone: '+355691234567',
-        heatmeterId: 'ADM001',
-        locale: 'en',
-        role: 'admin',
-        verified: true,
-        createdAt: '2024-01-01T00:00:00Z'
-      },
-      token: 'mock-admin-token'
-    }
-  }
-  
-  // Handle different mock users
-  const mockUsers = {
-    'arben.mehmeti@email.com': {
-      id: 'user-1',
-      email: 'arben.mehmeti@email.com',
-      fullName: 'Arben Mehmeti',
-      phone: '+355 69 123 4567',
-      heatmeterId: 'HM123456',
-      locale: 'sq' as const,
-      role: 'user' as const,
-      verified: true,
-      createdAt: '2024-01-15T10:30:00Z'
-    },
-    'elida.kola@email.com': {
-      id: 'user-2',
-      email: 'elida.kola@email.com',
-      fullName: 'Elida Kola',
-      phone: '+355 68 987 6543',
-      heatmeterId: 'HM789012',
-      locale: 'sq' as const,
-      role: 'user' as const,
-      verified: true,
-      createdAt: '2024-02-03T10:30:00Z'
-    }
-  }
-  
-  const user = mockUsers[credentials.identifier as keyof typeof mockUsers]
-  
-  if (user) {
-    return { user, token: 'mock-user-token' }
-  }
-  
-  // Default fallback user
-  return {
-    user: {
-      id: 'user-default',
-      email: credentials.identifier,
-      fullName: 'Test User',
-      phone: '+355691234567',
-      heatmeterId: 'HM000000',
-      locale: 'sq',
-      role: 'user',
-      verified: true,
-      createdAt: '2024-01-15T10:30:00Z'
-    },
-    token: 'mock-user-token'
-  }
-}
-
-const mockRegister = async (data: any): Promise<{ user: User; token: string }> => {
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  
-  return {
-    user: {
-      id: 'new-user-' + Date.now(),
-      email: data.email,
-      fullName: data.fullName,
-      phone: data.phone,
-      heatmeterId: data.heatmeterId,
-      locale: data.locale || 'en',
-      role: 'user',
-      verified: false,
-      createdAt: new Date().toISOString()
-    },
-    token: 'mock-new-user-token'
-  }
-}
+// Convert API user to store user format
+const convertApiUser = (apiUser: ApiUser): User => ({
+  id: apiUser.id.toString(),
+  email: apiUser.email,
+  fullName: apiUser.name,
+  phone: apiUser.phone,
+  heatmeterId: apiUser.heatmeter_id,
+  locale: (apiUser.language || 'sq') as 'sq' | 'en',
+  role: apiUser.is_admin ? 'admin' : 'user',
+  verified: apiUser.is_verified,
+  createdAt: apiUser.created_at
+})
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -143,97 +67,151 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
-      
+
       // Impersonation state
       originalUser: null,
       impersonatedUser: null,
       isImpersonating: false,
-      
+
       login: async (credentials) => {
         set({ isLoading: true, error: null })
-        
+
         try {
-          const response = await mockLogin(credentials)
+          // For now, only support email login method
+          if (credentials.method !== 'email') {
+            throw new Error('Only email login is currently supported')
+          }
+
+          const response = await authApi.login({
+            email: credentials.identifier,
+            password: credentials.password || '',
+            remember: credentials.rememberMe
+          })
+
           set({
-            user: response.user,
+            user: convertApiUser(response.user),
             token: response.token,
             isAuthenticated: true,
             isLoading: false,
             error: null
           })
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || error.message || 'Invalid credentials. Please try again.'
           set({
-            error: 'Invalid credentials. Please try again.',
+            error: errorMessage,
             isLoading: false
           })
           throw error
         }
       },
-      
-      logout: () => {
-        set({ 
-          user: null, 
-          token: null, 
-          isAuthenticated: false,
-          error: null,
-          originalUser: null,
-          impersonatedUser: null,
-          isImpersonating: false
-        })
+
+      logout: async () => {
+        try {
+          await authApi.logout()
+        } catch (error) {
+          console.error('Logout error:', error)
+        } finally {
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            error: null,
+            originalUser: null,
+            impersonatedUser: null,
+            isImpersonating: false
+          })
+        }
       },
-      
+
       register: async (data) => {
         set({ isLoading: true, error: null })
-        
+
         try {
-          const response = await mockRegister(data)
+          const response = await authApi.register({
+            name: data.fullName,
+            email: data.email,
+            password: data.password,
+            password_confirmation: data.passwordConfirmation,
+            phone: data.phone,
+            language: data.locale
+          })
+
           set({
-            user: response.user,
+            user: convertApiUser(response.user),
             token: response.token,
             isAuthenticated: true,
             isLoading: false,
             error: null
           })
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || error.message || 'Registration failed. Please try again.'
           set({
-            error: 'Registration failed. Please try again.',
+            error: errorMessage,
             isLoading: false
           })
           throw error
         }
       },
-      
+
       refreshToken: async () => {
         try {
-          // Mock refresh token logic
-          await new Promise(resolve => setTimeout(resolve, 500))
+          const response = await authApi.refreshToken()
+          set({
+            token: response.token,
+            user: convertApiUser(response.user)
+          })
           return true
         } catch {
           get().logout()
           return false
         }
       },
-      
+
+      checkAuth: async () => {
+        const token = get().token
+        if (!token) {
+          set({ isAuthenticated: false, user: null })
+          return
+        }
+
+        try {
+          apiService.setToken(token)
+          const response = await authApi.getUser()
+          set({
+            user: convertApiUser(response.user),
+            isAuthenticated: true
+          })
+        } catch (error) {
+          console.error('Auth check failed:', error)
+          set({
+            isAuthenticated: false,
+            user: null,
+            token: null
+          })
+          apiService.setToken(null)
+        }
+      },
+
       clearError: () => {
         set({ error: null })
       },
-      
+
       setUser: (user) => {
         set({ user })
       },
-      
+
       startImpersonation: (targetUser) => {
         const currentState = get()
         if (currentState.user?.role === 'admin') {
           set({
             originalUser: currentState.user,
             impersonatedUser: targetUser,
-            user: targetUser, // Set the user to the impersonated user
+            user: targetUser,
             isImpersonating: true
           })
         }
       },
-      
+
       stopImpersonation: () => {
         const currentState = get()
         if (currentState.isImpersonating && currentState.originalUser) {
@@ -248,14 +226,22 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
-        token: state.token, 
-        user: state.user, 
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
         isAuthenticated: state.isAuthenticated,
         originalUser: state.originalUser,
         impersonatedUser: state.impersonatedUser,
         isImpersonating: state.isImpersonating
       }),
+      onRehydrateStorage: () => (state) => {
+        // Set token in API service when rehydrating from storage
+        if (state?.token) {
+          apiService.setToken(state.token)
+          // Check auth status on rehydration
+          state.checkAuth()
+        }
+      }
     }
   )
 )
