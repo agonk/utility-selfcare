@@ -61,7 +61,6 @@ This platform enables utility companies (electricity, gas, water, heating) to of
 - PostgreSQL 18
 - Redis 8.2+
 - Composer
-- Docker (optional)
 
 ### Installation
 
@@ -86,11 +85,6 @@ php artisan serve
 cd frontend
 npm install
 npm run dev
-```
-
-4. Docker Setup (Alternative)
-```bash
-docker-compose up -d
 ```
 
 ### Configuration

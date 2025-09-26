@@ -55,8 +55,7 @@ Thumbs.db
 .project
 .settings/
 
-# Docker
-/docker/data/
+# Logs
 *.log
 
 # Testing
