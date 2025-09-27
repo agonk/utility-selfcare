@@ -109,7 +109,7 @@ export const LoginPage: React.FC = () => {
               
               <TabsContent value="heatmeter" className="mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="heatmeter">Heatmeter ID</Label>
+                  <Label htmlFor="heatmeter">HeatCustomermeter ID</Label>
                   <Input
                     id="heatmeter"
                     type="text"

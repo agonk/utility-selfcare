@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   User, 
   Mail, 
@@ -26,6 +26,7 @@ import { Badge } from '../ui/badge'
 import { formatDate } from '../ui/utils'
 import { useAuthStore } from '../../stores/authStore'
 import { toast } from 'sonner'
+import { authApi } from '../../services/api'
 
 export const ProfileSettings: React.FC = () => {
   const { user, setUser } = useAuthStore()
@@ -38,7 +39,7 @@ export const ProfileSettings: React.FC = () => {
     fullName: user?.fullName || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    heatmeterId: user?.heatmeterId || '',
+    customerId: user?.customerId || '',
     locale: user?.locale || 'en'
   })
 
@@ -57,16 +58,35 @@ export const ProfileSettings: React.FC = () => {
     pushNotifications: true
   })
 
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        customerId: user.customerId || '',
+        locale: user.locale || 'en'
+      })
+    }
+  }, [user])
+
   const handleSaveProfile = async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      const response = await authApi.updateProfile({
+        name: profileData.fullName,
+        phone: profileData.phone,
+        customer_id: profileData.customerId,
+        language: profileData.locale
+      })
+
       setUser({
         ...user!,
-        ...profileData
+        fullName: response.user.name,
+        phone: response.user.phone,
+        customerId: response.user.customer_id,
+        locale: (response.user.language || 'sq') as 'sq' | 'en'
       })
-      
+
       setIsEditing(false)
       toast.success('Profile updated successfully!')
     } catch (error) {
@@ -233,13 +253,13 @@ export const ProfileSettings: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="heatmeterId">Heatmeter ID</Label>
+                  <Label htmlFor="customerId">Customer ID</Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      id="heatmeterId"
-                      value={profileData.heatmeterId}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, heatmeterId: e.target.value }))}
+                      id="customerId"
+                      value={profileData.customerId}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, customerId: e.target.value }))}
                       disabled={!isEditing}
                       className="pl-10"
                     />

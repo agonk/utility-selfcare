@@ -85,7 +85,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  heatmeter_id?: string;
+  customer_id?: string;
   is_verified: boolean;
   verification_type?: 'otp' | 'invoice' | 'pending';
   language: string;
@@ -143,5 +143,14 @@ export const authApi = {
       apiService.setToken(response.token);
     }
     return response;
+  },
+
+  async updateProfile(data: {
+    name?: string;
+    phone?: string;
+    customer_id?: string;
+    language?: string;
+  }): Promise<{ user: User; message: string }> {
+    return apiService.put('/user', data);
   },
 };
