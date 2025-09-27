@@ -17,6 +17,7 @@ Route::post('/email/verify', [AuthController::class, 'verifyEmail']);
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::get('/user', [AuthController::class, 'user']);
+    Route::put('/user', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail']);

@@ -135,7 +135,7 @@ export const Dashboard: React.FC = () => {
         </div>
         <div className="mt-4 sm:mt-0">
           <Badge variant="outline" className="text-sm">
-            Heatmeter: {user?.heatmeterId || 'Not connected'}
+            Customer ID: {user?.customerId || 'Not added'}
           </Badge>
         </div>
       </div>

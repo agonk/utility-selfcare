@@ -27,6 +27,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Password::defaults()],
             'phone' => 'nullable|string|max:20',
+            'customer_id' => 'nullable|string|max:255',
             'language' => 'nullable|string|in:sq,en',
         ]);
 
@@ -35,6 +36,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
+            'customer_id' => $validated['customer_id'] ?? null,
             'language' => $validated['language'] ?? 'sq',
         ]);
 
@@ -165,6 +167,24 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Verification email sent.',
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'customer_id' => 'nullable|string|max:255',
+            'language' => 'nullable|string|in:sq,en',
+        ]);
+
+        $user = $request->user();
+        $user->update($validated);
+
+        return response()->json([
+            'user' => $user->fresh(),
+            'message' => 'Profile updated successfully',
         ]);
     }
 }

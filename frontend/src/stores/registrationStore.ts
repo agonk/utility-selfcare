@@ -7,8 +7,8 @@ export interface RegistrationData {
   phone?: string
   locale: 'sq' | 'en'
   
-  // Step 2: Heatmeter
-  heatmeterId?: string
+  // Step 2: Customer ID
+  customerId?: string
   
   // Step 3: Verification
   verificationType?: 'otp' | 'invoice'

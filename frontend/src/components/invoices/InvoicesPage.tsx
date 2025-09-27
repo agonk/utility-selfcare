@@ -1,17 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
+import {
+  Search,
+  Filter,
+  Download,
+  Eye,
   CreditCard,
   Calendar,
   Euro,
   FileText,
   CheckCircle2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
@@ -21,8 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../ui/checkbox'
 import { DatePickerRange } from '../ui/date-range-picker'
 import { formatCurrency } from '../ui/utils'
+import { useInvoices, useDownloadInvoicePDF } from '../../hooks/useInvoices'
 
-// Mock invoice data
+// Mock invoice data (backup - remove after testing)
 const mockInvoices = [
   {
     id: 'INV-2024-12',
@@ -107,18 +109,46 @@ export const InvoicesPage: React.FC = () => {
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({})
 
-  const filteredInvoices = mockInvoices.filter(invoice => {
-    const matchesSearch = 
+  const { data, isLoading, error } = useInvoices()
+  const downloadPDF = useDownloadInvoicePDF()
+
+  const apiInvoices = useMemo(() => {
+    if (!data?.invoices) return []
+
+    return data.invoices.map(inv => ({
+      id: inv.id,
+      invoiceNumber: inv.id,
+      period: new Date(inv.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      startDate: inv.reading_date || inv.date,
+      endDate: inv.date,
+      heatmeterId: inv.customer_id,
+      consumption: inv.kwh_consumed,
+      amount: inv.outstanding,
+      status: inv.status === 'paid' ? 'paid' as const :
+              new Date(inv.due_date) < new Date() ? 'overdue' as const : 'unpaid' as const,
+      issueDate: inv.date,
+      dueDate: inv.due_date,
+      paidDate: inv.status === 'paid' ? inv.date : undefined,
+      pdfUrl: `/invoices/${inv.id}/pdf`,
+      volumeM3: inv.volume_m3,
+      gcalEquivalent: inv.gcal_equivalent
+    }))
+  }, [data])
+
+  const invoices = apiInvoices.length > 0 ? apiInvoices : mockInvoices
+
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch =
       invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.period.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter
-    
-    const matchesDateRange = 
-      !dateRange.from || 
-      !dateRange.to || 
+
+    const matchesDateRange =
+      !dateRange.from ||
+      !dateRange.to ||
       (new Date(invoice.issueDate) >= dateRange.from && new Date(invoice.issueDate) <= dateRange.to)
-    
+
     return matchesSearch && matchesStatus && matchesDateRange
   })
 
@@ -193,12 +223,30 @@ export const InvoicesPage: React.FC = () => {
   }
 
   const summaryStats = {
-    total: mockInvoices.length,
-    unpaid: mockInvoices.filter(inv => inv.status === 'unpaid').length,
-    overdue: mockInvoices.filter(inv => inv.status === 'overdue').length,
-    totalUnpaidAmount: mockInvoices
+    total: invoices.length,
+    unpaid: invoices.filter(inv => inv.status === 'unpaid').length,
+    overdue: invoices.filter(inv => inv.status === 'overdue').length,
+    totalUnpaidAmount: invoices
       .filter(inv => inv.status === 'unpaid' || inv.status === 'overdue')
       .reduce((total, inv) => total + inv.amount, 0)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Failed to load invoices</h2>
+        <p className="text-gray-600">Please try refreshing the page</p>
+      </div>
+    )
   }
 
   return (
@@ -397,8 +445,17 @@ export const InvoicesPage: React.FC = () => {
                         </Link>
                       </Button>
                       
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => downloadPDF.mutate(invoice.id)}
+                        disabled={downloadPDF.isPending}
+                      >
+                        {downloadPDF.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
                       </Button>
                       
                       {invoice.status === 'unpaid' && (

@@ -7,7 +7,7 @@ export interface User {
   email: string
   fullName: string
   phone?: string
-  heatmeterId?: string
+  customerId?: string
   locale: 'sq' | 'en'
   role: 'user' | 'admin'
   verified: boolean
@@ -52,7 +52,7 @@ const convertApiUser = (apiUser: ApiUser): User => ({
   email: apiUser.email,
   fullName: apiUser.name,
   phone: apiUser.phone,
-  heatmeterId: apiUser.heatmeter_id,
+  customerId: apiUser.customer_id,
   locale: (apiUser.language || 'sq') as 'sq' | 'en',
   role: apiUser.is_admin ? 'admin' : 'user',
   verified: apiUser.is_verified,
@@ -133,6 +133,7 @@ export const useAuthStore = create<AuthState>()(
             password: data.password,
             password_confirmation: data.passwordConfirmation,
             phone: data.phone,
+            customer_id: data.customerId,
             language: data.locale
           })
 

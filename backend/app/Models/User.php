@@ -25,7 +25,7 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'phone',
-        'heatmeter_id',
+        'customer_id',
         'is_verified',
         'verification_type',
         'verified_at',

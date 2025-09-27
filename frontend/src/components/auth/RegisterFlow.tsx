@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 
 const steps = [
   { id: 1, title: 'Account Details', description: 'Basic information' },
-  { id: 2, title: 'Heatmeter Connection', description: 'Link your meter' },
+  { id: 2, title: 'Customer ID', description: 'Link your account' },
   { id: 3, title: 'Verification', description: 'Verify your identity' },
   { id: 4, title: 'Security', description: 'Set your password' }
 ]
@@ -75,6 +75,7 @@ export const RegisterFlow: React.FC = () => {
         password: data.password,
         passwordConfirmation: data.passwordConfirm,
         phone: data.phone,
+        customerId: data.customerId,
         locale: data.locale
       })
       toast.success('Account created successfully!')
@@ -179,21 +180,21 @@ export const RegisterFlow: React.FC = () => {
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <Hash className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Connect Your Heatmeter</h2>
+                <h2 className="text-xl font-semibold mb-2">Connect Your Account</h2>
                 <p className="text-gray-600">
-                  Link your heatmeter for automatic billing and consumption tracking
+                  Link your customer ID for automatic billing and consumption tracking
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="heatmeterId">Heatmeter ID</Label>
+                  <Label htmlFor="customerId">Customer ID</Label>
                   <Input
-                    id="heatmeterId"
+                    id="customerId"
                     type="text"
-                    placeholder="HM123456"
-                    value={data.heatmeterId || ''}
-                    onChange={(e) => updateData({ heatmeterId: e.target.value })}
+                    placeholder="CUST-001"
+                    value={data.customerId || ''}
+                    onChange={(e) => updateData({ customerId: e.target.value })}
                   />
                   <p className="text-xs text-gray-500">
                     Find this on your latest invoice or meter display
@@ -202,7 +203,7 @@ export const RegisterFlow: React.FC = () => {
 
                 <div className="bg-blue-50 p-4 rounded-md">
                   <p className="text-sm text-blue-800">
-                    <strong>Skip this step?</strong> You can add your heatmeter later from your profile settings.
+                    <strong>Skip this step?</strong> You can add your customer ID later from your profile settings.
                   </p>
                 </div>
               </div>
